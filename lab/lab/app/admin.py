@@ -17,8 +17,7 @@ class OsobaAdmin(admin.ModelAdmin):
         queryset.update(stanowisko=None)
 
     def save_model(self, request, obj, form, change):
-        # Automatycznie przypisz właściciela przy tworzeniu obiektu
-        if not obj.pk:  # Jeśli obiekt jest nowy
+        if not obj.pk:
             obj.wlasciciel = request.user
         super().save_model(request, obj, form, change)
 
