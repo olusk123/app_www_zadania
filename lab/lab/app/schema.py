@@ -2,7 +2,7 @@ from .models import Osoba, Stanowisko
 import graphene
 from graphene_django import DjangoObjectType
 
-# GraphQL Types
+
 class OsobaType(DjangoObjectType):
     class Meta:
         model = Osoba
