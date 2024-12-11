@@ -8,8 +8,6 @@ import re
 def get_current_date():
     return now().date()
 
-
-# Deklaracja statycznej listy wyboru do wykorzystania w klasie modelu
 MONTHS = models.IntegerChoices('Miesiace',
                                'Styczeń Luty Marzec Kwiecień Maj Czerwiec Lipiec Sierpień Wrzesień Październik Listopad Grudzień')
 
@@ -69,7 +67,7 @@ class Osoba(models.Model):
     nazwisko = models.CharField(max_length=50, null=False, blank=False)
     plec = models.IntegerField(choices=Plec.choices, null=False, blank=False)
     stanowisko = models.ForeignKey('Stanowisko', on_delete=models.CASCADE)
-    data_dodania = models.DateField(default=get_current_date)  # Użycie funkcji zamiast lambda
+    data_dodania = models.DateField(default=get_current_date)
     wlasciciel = models.ForeignKey(
         'auth.User', on_delete=models.CASCADE, related_name='osoby', null=True
     )
@@ -85,18 +83,16 @@ class Osoba(models.Model):
 
     # Metoda walidacji
     def clean(self):
-        # Walidacja pola 'imie' i 'nazwisko' - może zawierać tylko litery
         if not re.match(r'^[a-zA-ZĄĆĘŁŃÓŚŹŻąćęłńóśźż]+$', self.imie):
             raise ValidationError({'imie': 'Imię może zawierać tylko litery.'})
 
         if not re.match(r'^[a-zA-ZĄĆĘŁŃÓŚŹŻąćęłńóśźż]+$', self.nazwisko):
             raise ValidationError({'nazwisko': 'Nazwisko może zawierać tylko litery.'})
 
-        # Walidacja pola 'data_dodania' - nie może być z przyszłości
         today = now().date()
         if self.data_dodania > today:
             raise ValidationError({'data_dodania': 'Data dodania nie może być z przyszłości.'})
 
     def save(self, *args, **kwargs):
-        self.full_clean()  # Wywołanie metody clean przed zapisaniem
+        self.full_clean()
         super().save(*args, **kwargs)
