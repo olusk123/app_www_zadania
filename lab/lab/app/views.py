@@ -17,9 +17,7 @@ from django.core.exceptions import PermissionDenied
 @authentication_classes([TokenAuthentication, SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def osoba_list(request):
-    """
-    Lista wszystkich obiektów typu Osoba (dostępne tylko dla właściciela) lub dodanie nowego obiektu.
-    """
+
     if request.method == 'GET':
         osoby = Osoba.objects.filter(wlasciciel=request.user)
         serializer = OsobaSerializer(osoby, many=True)
@@ -36,27 +34,22 @@ def osoba_list(request):
 @authentication_classes([TokenAuthentication, SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def osoba_detail(request, pk):
-    """
-    Pobranie szczegółów obiektu `Osoba`.
-    Dostęp dla właściciela lub użytkownika z uprawnieniem `can_view_other_persons`.
-    """
+
     osoba = get_object_or_404(Osoba, pk=pk)
 
-    # Sprawdź, czy użytkownik jest właścicielem
     if osoba.wlasciciel == request.user:
         serializer = OsobaSerializer(osoba)
         return Response(serializer.data)
 
-    # Jeśli nie jest właścicielem, sprawdź uprawnienie
-    if request.user.has_perm('app_name.can_view_other_persons'):  # Zmień `app_name` na nazwę aplikacji
+
+    if request.user.has_perm('app_name.can_view_other_persons'):
         serializer = OsobaSerializer(osoba)
         return Response(serializer.data)
 
-    # Jeśli brak uprawnień, zwróć 403
+
     return Response({'detail': 'Nie masz uprawnień do tego obiektu.'}, status=status.HTTP_403_FORBIDDEN)
 
 
-# Aktualizacja obiektu typu Osoba (tylko dla właściciela)
 @api_view(['PUT'])
 @authentication_classes([TokenAuthentication, SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
@@ -66,7 +59,6 @@ def osoba_update(request, pk):
     """
     osoba = get_object_or_404(Osoba, pk=pk)
 
-    # Sprawdź, czy użytkownik jest właścicielem
     if osoba.wlasciciel != request.user:
         return Response({'detail': 'Nie masz uprawnień do zmiany tego obiektu.'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -76,18 +68,13 @@ def osoba_update(request, pk):
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# Usunięcie obiektu typu Osoba (tylko dla właściciela, wymaga uwierzytelnienia tokenem)
 @api_view(['DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def osoba_delete(request, pk):
-    """
-    Usunięcie obiektu typu Osoba (tylko dla właściciela).
-    """
+
     osoba = get_object_or_404(Osoba, pk=pk)
 
-    # Sprawdź, czy użytkownik jest właścicielem
     if osoba.wlasciciel != request.user:
         return Response({'detail': 'Nie masz uprawnień do usunięcia tego obiektu.'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -105,11 +92,10 @@ def osoba_detail_view(request, pk):
     except Osoba.DoesNotExist:
         return HttpResponse("Obiekt Osoba nie istnieje.", status=404)
 
-    # Jeśli użytkownik jest właścicielem, pokaż dane
+
     if osoba.wlasciciel == request.user:
         return HttpResponse(f"Imię: {osoba.imie}, Nazwisko: {osoba.nazwisko}, Stanowisko: {osoba.stanowisko}")
 
-    # Jeśli nie jest właścicielem, sprawdź uprawnienie
     if request.user.has_perm('app_name.can_view_other_persons'):  # Zmień 'app_name' na nazwę swojej aplikacji
         return HttpResponse(f"Imię: {osoba.imie}, Nazwisko: {osoba.nazwisko}, Stanowisko: {osoba.stanowisko}")
 
@@ -117,12 +103,9 @@ def osoba_detail_view(request, pk):
     raise PermissionDenied("Nie masz uprawnień do przeglądania tego obiektu.")
 
 
-# Widoki dla modelu Stanowisko
 @api_view(['GET', 'POST'])
 def stanowisko_list(request):
-    """
-    Lista wszystkich obiektów typu Stanowisko lub dodanie nowego obiektu.
-    """
+
     if request.method == 'GET':
         stanowiska = Stanowisko.objects.all()
         serializer = StanowiskoSerializer(stanowiska, many=True)
@@ -137,9 +120,7 @@ def stanowisko_list(request):
 
 @api_view(['GET', 'PUT', 'DELETE'])
 def stanowisko_detail(request, pk):
-    """
-    Pobranie, aktualizacja lub usunięcie pojedynczego obiektu typu Stanowisko.
-    """
+
     stanowisko = get_object_or_404(Stanowisko, pk=pk)
 
     if request.method == 'GET':
@@ -157,27 +138,22 @@ def stanowisko_detail(request, pk):
         stanowisko.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# Generowanie tokenów dla istniejących użytkowników
+
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def generate_tokens_for_users(request):
-    """
-    Generowanie tokenów dla wszystkich istniejących użytkowników, którzy nie mają jeszcze tokena.
-    """
+
     users = User.objects.all()
     for user in users:
         Token.objects.get_or_create(user=user)
     return Response({'status': 'Tokens generated for all users'}, status=status.HTTP_200_OK)
 
-# Lista wszystkich obiektów typu Osoba przypisanych do danego Stanowiska
+
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def stanowisko_members(request, pk):
-    """
-    Lista wszystkich obiektów typu Osoba przypisanych do danego Stanowiska (tylko do odczytu, wymaga uwierzytelnienia tokenem).
-    """
     stanowisko = get_object_or_404(Stanowisko, pk=pk)
     osoby = Osoba.objects.filter(stanowisko=stanowisko)
     serializer = OsobaSerializer(osoby, many=True)
